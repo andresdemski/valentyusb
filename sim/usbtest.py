@@ -347,13 +347,17 @@ class UsbTest:
         epaddr_in = EndpointType.epaddr(0, EndpointType.IN)
 
         xmit = cocotb.fork(self.host_setup(addr, epnum, data))
-        # yield self.expect_setup(epaddr_out, data)
+
+        if self.variant == 'eptri':
+            yield self.expect_setup(epaddr_out, data)
+
         yield xmit.join()
-        
-        if data[0] & 0x80:
-            yield self.host_send(PID.DATA1, addr, epnum, [])
-        else:
-            yield self.host_recv(PID.DATA1, addr, epnum, [])
+
+        if self.variant == 'dummy':
+            if data[0] & 0x80:
+                yield self.host_send(PID.DATA1, addr, epnum, [])
+            else:
+                yield self.host_recv(PID.DATA1, addr, epnum, [])
 
     @cocotb.coroutine
     def transaction_data_out(self, addr, ep, data, chunk_size=64, expected=PID.ACK):
@@ -395,9 +399,13 @@ class UsbTest:
             else:
                 datax = PID.DATA0
         if not sent_data:
-            yield self.write(self.csrs['usb_epin_epno'], epnum)
-            recv = cocotb.fork(self.host_recv(datax, addr, epnum, []))
-            yield self.send_data(datax, epnum, data)
+            if self.variant == 'dummy':
+                recv = cocotb.fork(self.host_recv(datax, addr, epnum, []))
+            elif self.variant == 'eptri':
+                yield self.write(self.csrs['usb_epin_epno'], epnum)
+                recv = cocotb.fork(self.host_recv(datax, addr, epnum, []))
+                yield self.send_data(datax, epnum, data)
+                
             yield recv.join()
 
     @cocotb.coroutine
