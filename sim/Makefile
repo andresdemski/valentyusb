@@ -65,5 +65,9 @@ $(PWD)/dut.v: generate_verilog.py $(DEPENDENCY)
 	cd ..
 	PYTHONPATH=../../litex:../../migen:../../litedram:.. python3 generate_verilog.py $(USB_VARIANT)
 	mv build/gateware/dut.v .
-	mv build/gateware/*.init .
+	mv build/gateware/*.init . || true
+
+clean::
+	rm -rf build $(CUSTOM_COMPILE_DEPS)
+	rm -rf csr.csv out_buffer.init results.xml dut.v dump.vcd
 
