@@ -29,6 +29,18 @@
 
 # Default to verilog
 TOPLEVEL_LANG ?= verilog
+export USB_VARIANT ?= dummy
+
+ifeq ($(USB_VARIANT),dummy)
+    DEPENDENCY = ../valentyusb/usbcore/cpu/dummyusb.py
+    MODULE = test-dummyusb
+endif
+
+ifeq ($(USB_VARIANT),eptri)
+    DEPENDENCY = ../valentyusb/usbcore/cpu/eptri.py
+    MODULE = test-eptri
+endif
+
 
 WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
@@ -43,21 +55,15 @@ endif
 
 VERILOG_SOURCES = $(WPWD)/dut.v $(WPWD)/tb.v
 TOPLEVEL = tb
-#MODULE = test-eptri
-MODULE = test-dummyusb
 
 CUSTOM_COMPILE_DEPS = $(PWD)/dut.v
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
-#$(PWD)/dut.v: generate_verilog.py ../valentyusb/usbcore/cpu/eptri.py
-#	cd ..
-#	PYTHONPATH=../../litex:../../migen:../../litedram:.. python3 generate_verilog.py eptri
-#	mv build/gateware/dut.v .
-
-$(PWD)/dut.v: generate_verilog.py ../valentyusb/usbcore/cpu/dummyusb.py
+$(PWD)/dut.v: generate_verilog.py $(DEPENDENCY)
 	cd ..
-	PYTHONPATH=../../litex:../../migen:../../litedram:.. python3 generate_verilog.py dummy
+	PYTHONPATH=../../litex:../../migen:../../litedram:.. python3 generate_verilog.py $(USB_VARIANT)
 	mv build/gateware/dut.v .
 	mv build/gateware/*.init .
+
